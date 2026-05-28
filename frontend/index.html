@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="BookIt — система онлайн-записи на услуги">
+  <title>BookIt — Онлайн-запись на услуги</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="header" id="header">
+    <div class="container header__inner">
+      <a href="#" class="header__logo" onclick="showPage('services')">
+        <div class="logo-icon">📅</div>
+        <span class="logo-text">Book<span class="logo-accent">It</span></span>
+      </a>
+      <nav class="header__nav" id="nav">
+        <a href="#" class="nav-link active" data-page="services" onclick="showPage('services')">🏠 Услуги</a>
+        <a href="#" class="nav-link" data-page="booking" onclick="showPage('booking')" id="navBooking" style="display:none">📅 Записаться</a>
+        <a href="#" class="nav-link" data-page="my-bookings" onclick="showPage('my-bookings')" id="navMyBookings" style="display:none">📋 Мои записи</a>
+        <a href="#" class="nav-link" data-page="profile" onclick="showPage('profile')" id="navProfile" style="display:none">👤 Профиль</a>
+        <a href="#" class="nav-link" data-page="admin" onclick="showPage('admin')" id="navAdmin" style="display:none">⚙️ Админ</a>
+      </nav>
+      <div class="header__auth" id="authSection">
+        <button class="btn btn--outline btn--sm" onclick="showPage('login')">Войти</button>
+        <button class="btn btn--primary btn--sm" onclick="showPage('register')">Регистрация</button>
+      </div>
+      <div class="header__user" id="userSection" style="display:none">
+        <span class="user-badge" id="userBadge"></span>
+        <button class="btn btn--ghost btn--sm" onclick="logout()">Выйти</button>
+      </div>
+      <button class="header__burger" id="burger" onclick="toggleMenu()">☰</button>
+    </div>
+  </header>
+
+  <main class="main" id="mainContent">
+
+    <!-- ═══ PAGE: SERVICES ═══ -->
+    <section class="page" id="page-services">
+      <div class="container">
+        <div class="page-header">
+          <div><h1 class="page-title">Наши услуги</h1><p class="page-subtitle">Выберите услугу и запишитесь онлайн за минуту</p></div>
+          <div class="services-count" id="servicesCount"></div>
+        </div>
+        <div class="filters-bar">
+          <div class="search-box">
+            <span class="search-box__icon">🔍</span>
+            <input type="text" class="search-box__input" id="searchInput" placeholder="Найти услугу..." oninput="handleSearch(this.value)">
+          </div>
+          <select class="sort-select" id="sortSelect" onchange="handleSort(this.value)">
+            <option value="">По умолчанию</option>
+            <option value="price_asc">Сначала дешёвые</option>
+            <option value="price_desc">Сначала дорогие</option>
+            <option value="duration">По длительности</option>
+            <option value="name">По названию А-Я</option>
+          </select>
+        </div>
+        <div class="services-grid" id="servicesList"><div class="loading"><div class="spinner"></div><div class="loading__text">Загрузка услуг...</div></div></div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: LOGIN ═══ -->
+    <section class="page" id="page-login" style="display:none">
+      <div class="container container--sm">
+        <div class="form-card">
+          <div class="form-icon">🔐</div>
+          <h2 class="form-title">Вход в систему</h2>
+          <div class="form-error" id="loginError" style="display:none"></div>
+          <form onsubmit="handleLogin(event)">
+            <div class="form-group"><label class="form-label">Логин</label><input type="text" id="loginUsername" class="form-input" placeholder="Ваш логин" required minlength="3" autocomplete="username"></div>
+            <div class="form-group"><label class="form-label">Пароль</label><input type="password" id="loginPassword" class="form-input" placeholder="Ваш пароль" required minlength="4" autocomplete="current-password"></div>
+            <button type="submit" class="btn btn--primary btn--full" id="loginBtn">Войти →</button>
+          </form>
+          <p class="form-footer">Нет аккаунта? <a href="#" onclick="showPage('register')">Зарегистрироваться</a></p>
+          <div class="form-hint">Демо: <code>demo / user123</code> · Админ: <code>admin / admin123</code></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: REGISTER ═══ -->
+    <section class="page" id="page-register" style="display:none">
+      <div class="container container--sm">
+        <div class="form-card">
+          <div class="form-icon">✨</div>
+          <h2 class="form-title">Создать аккаунт</h2>
+          <div class="form-error" id="registerError" style="display:none"></div>
+          <form onsubmit="handleRegister(event)">
+            <div class="form-group"><label class="form-label">Логин</label><input type="text" id="regUsername" class="form-input" placeholder="Придумайте логин (мин. 3 символа)" required minlength="3" autocomplete="username"></div>
+            <div class="form-group"><label class="form-label">Пароль</label><input type="password" id="regPassword" class="form-input" placeholder="Придумайте пароль (мин. 4 символа)" required minlength="4" autocomplete="new-password"></div>
+            <button type="submit" class="btn btn--primary btn--full" id="regBtn">Создать аккаунт →</button>
+          </form>
+          <p class="form-footer">Уже есть аккаунт? <a href="#" onclick="showPage('login')">Войти</a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: BOOKING ═══ -->
+    <section class="page" id="page-booking" style="display:none">
+      <div class="container container--md">
+        <div class="form-card">
+          <div class="form-icon">📅</div>
+          <h2 class="form-title">Записаться на услугу</h2>
+          <div class="form-error" id="bookingError" style="display:none"></div>
+          <div class="form-success" id="bookingSuccess" style="display:none"></div>
+          <form onsubmit="handleBooking(event)" id="bookingForm">
+            <div class="form-group"><label class="form-label">Услуга</label><select id="bookingService" class="form-input" required><option value="">— Выберите услугу —</option></select></div>
+            <div class="form-group"><label class="form-label">Дата</label><input type="date" id="bookingDate" class="form-input" required></div>
+            <div class="form-group">
+              <label class="form-label">Выберите время</label>
+              <input type="hidden" id="bookingTime">
+              <div id="timeSlotsContainer"><p class="hint-text">Выберите услугу и дату</p></div>
+            </div>
+            <div class="booking-summary" id="bookingSummary" style="display:none">
+              <div class="summary-label">Итого</div>
+              <div class="summary-row"><span>Услуга</span><span id="summaryService">—</span></div>
+              <div class="summary-row"><span>Длительность</span><span id="summaryDuration">—</span></div>
+              <div class="summary-row summary-row--total"><span>Стоимость</span><span id="summaryPrice" class="summary-price">—</span></div>
+            </div>
+            <button type="submit" class="btn btn--primary btn--full btn--lg">✅ Подтвердить запись</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: MY BOOKINGS ═══ -->
+    <section class="page" id="page-my-bookings" style="display:none">
+      <div class="container">
+        <div class="page-header"><div><h1 class="page-title">Мои записи</h1><p class="page-subtitle">История ваших записей на услуги</p></div></div>
+        <div id="myBookingsList"><div class="loading"><div class="spinner"></div><div class="loading__text">Загрузка...</div></div></div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: PROFILE ═══ -->
+    <section class="page" id="page-profile" style="display:none">
+      <div class="container container--md">
+        <div class="page-header"><div><h1 class="page-title">Мой профиль</h1><p class="page-subtitle">Управление аккаунтом и статистика</p></div></div>
+        <div id="profileContent"><div class="loading"><div class="spinner"></div><div class="loading__text">Загрузка...</div></div></div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: ADMIN ═══ -->
+    <section class="page" id="page-admin" style="display:none">
+      <div class="container">
+        <div class="page-header"><div><h1 class="page-title">⚙️ Панель администратора</h1><p class="page-subtitle">Управление услугами, записями и пользователями</p></div></div>
+        <div class="admin-stats" id="adminStatsBar"></div>
+        <div class="admin-grid">
+          <div class="form-card">
+            <h3 class="section-title">➕ Добавить услугу</h3>
+            <div class="form-error" id="adminServiceError" style="display:none"></div>
+            <div class="form-success" id="adminServiceSuccess" style="display:none"></div>
+            <form onsubmit="handleAddService(event)">
+              <div class="form-group"><label class="form-label">Название</label><input type="text" id="adminServiceName" class="form-input" required placeholder="Например: Стрижка детская"></div>
+              <div class="form-group"><label class="form-label">Описание</label><textarea id="adminServiceDesc" class="form-input form-textarea" placeholder="Подробное описание услуги..."></textarea></div>
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Цена (₽)</label><input type="number" id="adminServicePrice" class="form-input" value="1000" min="0"></div>
+                <div class="form-group"><label class="form-label">Длительность (мин)</label><input type="number" id="adminServiceDuration" class="form-input" value="60" min="15" step="15"></div>
+              </div>
+              <button type="submit" class="btn btn--primary btn--full">Добавить услугу</button>
+            </form>
+          </div>
+          <div class="admin-right">
+            <h3 class="section-title">📋 Все записи</h3>
+            <div id="adminBookingsList"><div class="loading"><div class="spinner"></div></div></div>
+            <h3 class="section-title" style="margin-top:24px">👥 Пользователи</h3>
+            <div id="adminUsersList"><div class="loading"><div class="spinner"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="footer__brand">📅 Book<span style="color:var(--primary)">It</span> © 2026</span>
+      <span class="footer__hint">Демо: demo / user123 · Админ: admin / admin123</span>
+    </div>
+  </footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
