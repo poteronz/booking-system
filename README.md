@@ -1,10 +1,15 @@
 # 📅 BookIt — Система онлайн-записи
 
-Современное веб-приложение для онлайн-записи на услуги.
-Пользователи могут просматривать каталог услуг, выбирать удобную дату и время, управлять своими записями.
-Администратор управляет услугами и отслеживает все бронирования через панель управления.
+Веб-приложение для записи на услуги. Пользователи могут просматривать каталог услуг, записываться на удобное время, управлять своими записями. Администратор управляет услугами и видит все записи.
 
-> Учебный Fullstack-проект · Производственная практика · Группа 3ИП-4-23
+> Производственная практика · Группа 3ИП-4-23
+
+![Version](https://img.shields.io/badge/version-1.0-blue)
+![Stack](https://img.shields.io/badge/stack-Node.js%20%7C%20Express%20%7C%20SQLite-green)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![JWT Auth](https://img.shields.io/badge/auth-JWT-orange)
+![SQLite](https://img.shields.io/badge/database-SQLite-blue)
+![REST API](https://img.shields.io/badge/API-REST-success)
 
 ---
 
@@ -176,18 +181,19 @@ http://localhost:3000
 ```text
 booking-system/
 │
-├── backend/
-│   ├── db/
-│   ├── middleware/
-│   ├── routes/
-│   ├── server.js
+├── backend/                 # Серверная часть
+│   ├── db/                  # SQLite + seed
+│   ├── middleware/          # JWT middleware
+│   ├── routes/              # API routes
+│   ├── server.js            # Express server
 │   └── package.json
 │
-├── frontend/
+├── frontend/                # Клиентская часть
 │   ├── css/
 │   ├── js/
 │   └── index.html
 │
+├── screenshots/             # Скриншоты проекта
 ├── README.md
 └── .gitignore
 ```
@@ -214,9 +220,3 @@ booking-system/
 * **Чапчахов Пётр** — Fullstack Developer
 * **Беляев Андрей** — UI/UX Design
 * **Голубчиков Артём** — Тестирование и документация
-
----
-
-# 📄 Лицензия
-
-Проект создан в учебных целях.
