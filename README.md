@@ -24,25 +24,33 @@
 
 Три таблицы со связями:
 
-┌──────────────────────────┐
-│ users │
-│ id · username · role │
-│ password_hash │
-└──────────┬───────────────┘
-│ 1:N
-▼
-┌──────────────────────────────────────────┐
-│ bookings │
-│ id · user_id · service_id │
-│ booking_date · booking_time · status │
-└──────────┬───────────────────────────────┘
-│ N:1
-▼
-┌──────────────────────────┐
-│ services │
-│ id · name · description │
-│ price · duration · active│
-└──────────────────────────┘
+```mermaid
+erDiagram
+    users ||--o{ bookings : "1:N (user_id)"
+    services ||--o{ bookings : "1:N (service_id)"
+
+    users {
+        int id PK
+        text username
+        text password_hash
+        text role
+    }
+    services {
+        int id PK
+        text name
+        text description
+        real price
+        int duration
+        int active
+    }
+    bookings {
+        int id PK
+        int user_id FK
+        int service_id FK
+        text booking_date
+        text booking_time
+        text status
+    }
 
 
 - `users.id` → `bookings.user_id` (один пользователь — много записей)
