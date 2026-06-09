@@ -41,18 +41,30 @@ db.serialize(() => {
     FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
   )`);
 
+  // Таблица 4: time_slots — расписание доступности услуг
+  // day_of_week: 0=Вс, 1=Пн, 2=Вт, 3=Ср, 4=Чт, 5=Пт, 6=Сб
+  db.run(`CREATE TABLE IF NOT EXISTS time_slots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    service_id INTEGER NOT NULL,
+    day_of_week INTEGER NOT NULL CHECK(day_of_week BETWEEN 0 AND 6),
+    slot_time TEXT NOT NULL,
+    max_bookings INTEGER DEFAULT 1,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
+    UNIQUE(service_id, day_of_week, slot_time)
+  )`);
+
   db.run("CREATE INDEX IF NOT EXISTS idx_bookings_user ON bookings(user_id)");
   db.run("CREATE INDEX IF NOT EXISTS idx_bookings_service ON bookings(service_id)");
   db.run("CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(booking_date)");
+  db.run("CREATE INDEX IF NOT EXISTS idx_time_slots_service_day ON time_slots(service_id, day_of_week)");
 });
 
-// Promisified helpers
 db.getAsync = (sql, params = []) =>
   new Promise((res, rej) => db.get(sql, params, (err, row) => err ? rej(err) : res(row)));
-
 db.allAsync = (sql, params = []) =>
   new Promise((res, rej) => db.all(sql, params, (err, rows) => err ? rej(err) : res(rows)));
-
 db.runAsync = (sql, params = []) =>
   new Promise((res, rej) => db.run(sql, params, function(err) {
     err ? rej(err) : res({ lastID: this.lastID, changes: this.changes });

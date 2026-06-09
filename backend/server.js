@@ -4,37 +4,39 @@ const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 const path = require("path");
 
-const authRoutes = require("./routes/auth");
+const authRoutes    = require("./routes/auth");
 const serviceRoutes = require("./routes/services");
 const bookingRoutes = require("./routes/bookings");
 const profileRoutes = require("./routes/profile");
-const adminRoutes = require("./routes/admin");
+const adminRoutes   = require("./routes/admin");
+const slotsRoutes   = require("./routes/slots");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
 // Rate limiting
 app.use("/api/", rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
-app.use("/api/login", rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Слишком много попыток. Подождите 15 минут" } }));
+app.use("/api/login",    rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Слишком много попыток" } }));
 app.use("/api/register", rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: "Слишком много регистраций" } }));
 
-// Serve frontend
+// Статика фронтенда
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// API Routes
-app.use("/api", authRoutes);
-app.use("/api/services", serviceRoutes);
-app.use("/api/admin/services", serviceRoutes);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/profile", profileRoutes);
-app.use("/api/admin", adminRoutes);
+// API маршруты
+app.use("/api",                 authRoutes);
+app.use("/api/services",        serviceRoutes);
+app.use("/api/admin/services",  serviceRoutes);
+app.use("/api/bookings",        bookingRoutes);
+app.use("/api/profile",         profileRoutes);
+app.use("/api/admin",           adminRoutes);
+app.use("/api/available-slots", slotsRoutes);
+app.use("/api/slots",           slotsRoutes);
 
-// Global error handler
+// Глобальный обработчик ошибок
 app.use((err, req, res, next) => {
   console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
   res.status(500).json({ error: "Внутренняя ошибка сервера" });
@@ -48,6 +50,5 @@ app.get("*", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🏢 BookIt запущен: http://localhost:${PORT}`);
-  console.log(`   Админ: admin / admin123`);
-  console.log(`   Пользователь: demo / user123`);
+  console.log(`   Админ: admin / admin123 | Пользователь: demo / user123`);
 });

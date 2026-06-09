@@ -67,7 +67,7 @@ function bookService(id){showPage("booking");setTimeout(()=>{const s=document.ge
 function setupBookingListeners(){
   const d=document.getElementById("bookingDate"),s=document.getElementById("bookingService");
   if(d){const t=new Date();t.setDate(t.getDate()+1);d.min=t.toISOString().split("T")[0];d.addEventListener("change",loadBusyTimes)}
-  if(s){s.addEventListener("change",()=>{updateBookingSummary();loadBusyTimes()})}
+  if(s){s.addEventListener("change",()=>{updateBookingSummary();loadAvailableSlots()})}
 }
 function initBookingPage(){
   const s=document.getElementById("bookingService");
@@ -78,24 +78,36 @@ function updateBookingSummary(){
   const id=document.getElementById("bookingService").value,sm=document.getElementById("bookingSummary");
   if(id){const sv=allServices.find(s=>s.id===+id);if(sv){document.getElementById("summaryService").textContent=sv.name;document.getElementById("summaryPrice").textContent=sv.price>0?sv.price.toLocaleString("ru-RU")+" ₽":"Бесплатно";document.getElementById("summaryDuration").textContent=sv.duration+" мин";sm.style.display="block"}}else sm.style.display="none"
 }
-async function loadBusyTimes(){
+// Загружает доступные слоты из новой таблицы time_slots
+let availableSlots = [];
+async function loadAvailableSlots(){
   const sid=document.getElementById("bookingService").value,date=document.getElementById("bookingDate").value;
   if(!sid||!date){renderTimeSlots([]);return}
-  try{const d=await API.get(`/bookings/busy-times?service_id=${sid}&date=${date}`);busyTimes=d.busy_times||[]}catch{busyTimes=[]}
-  renderTimeSlots(busyTimes)
+  const c=document.getElementById("timeSlotsContainer");
+  c.innerHTML='<div class="loading"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div></div>';
+  try{
+    const d=await API.get(`/available-slots?service_id=${sid}&date=${date}`);
+    availableSlots=d.slots||[];
+    renderTimeSlots(availableSlots);
+  }catch{availableSlots=[];c.innerHTML='<p class="hint-text">Не удалось загрузить слоты</p>'}
 }
-function renderTimeSlots(busy){
+function renderTimeSlots(slots){
   const c=document.getElementById("timeSlotsContainer");if(!c)return;
-  const times=["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
-  const date=document.getElementById("bookingDate")?.value,today=new Date().toISOString().split("T")[0],now=new Date().toTimeString().slice(0,5);
+  const date=document.getElementById("bookingDate")?.value;
   if(!date){c.innerHTML='<p class="hint-text">Выберите дату чтобы увидеть слоты</p>';return}
-  c.innerHTML='<div class="time-slots">'+times.map(t=>{
-    const b=busy.includes(t),p=date===today&&t<=now,sel=selectedTimeSlot===t;
-    let cls="time-slot";if(b)cls+=" time-slot--busy";else if(p)cls+=" time-slot--past";else if(sel)cls+=" time-slot--selected";
-    return`<button class="${cls}" ${b||p?"disabled":""} onclick="selectTimeSlot('${t}')">${t}${b?" ✕":""}</button>`
-  }).join("")+'</div>'
+  if(!slots.length){c.innerHTML='<p class="hint-text">В этот день нет доступных слотов для выбранной услуги</p>';return}
+  c.innerHTML='<div class="time-slots">'+slots.map(s=>{
+    const sel=selectedTimeSlot===s.time;
+    let cls="time-slot";
+    if(!s.is_available&&!s.is_past)cls+=" time-slot--busy";
+    else if(s.is_past)cls+=" time-slot--past";
+    else if(sel)cls+=" time-slot--selected";
+    const disabled=!s.is_available||s.is_past;
+    const label=s.available===0?" ✕":(s.available<s.max_bookings?` (${s.available})`:"");
+    return`<button class="${cls}" ${disabled?"disabled":""} onclick="selectTimeSlot('${s.time}')" title="${disabled?"Недоступно":`Мест: ${s.available}`}">${s.time}${label}</button>`
+  }).join("")+'</div><p style="font-size:.72rem;color:var(--light);margin-top:8px">✕ — занято · (N) — осталось мест</p>'
 }
-function selectTimeSlot(t){selectedTimeSlot=t;document.getElementById("bookingTime").value=t;loadBusyTimes()}
+function selectTimeSlot(t){selectedTimeSlot=t;document.getElementById("bookingTime").value=t;loadAvailableSlots()}
 async function handleBooking(e){
   e.preventDefault();
   const sid=+document.getElementById("bookingService").value,date=document.getElementById("bookingDate").value,time=document.getElementById("bookingTime").value||selectedTimeSlot;
@@ -181,7 +193,12 @@ async function handleChangePassword(e){
 // ═══ ADMIN ═══
 async function loadAdminData(){
   if(!currentUser||currentUser.role!=="admin"){showPage("services");return}
-  loadAdminStats();loadAdminBookings();loadAdminUsers()
+  loadAdminStats();loadAdminBookings();loadAdminUsers();populateSlotServiceSelects();
+  // setup slot watchers
+  const ss=document.getElementById("adminSlotService");
+  const sd=document.getElementById("adminSlotDate");
+  if(ss) ss.addEventListener("change", loadAdminSlots);
+  if(sd) sd.addEventListener("change", loadAdminSlots);
 }
 async function loadAdminStats(){
   const c=document.getElementById("adminStatsBar");
@@ -215,6 +232,51 @@ async function handleAddService(e){
   e.preventDefault();const n=document.getElementById("adminServiceName").value.trim(),d=document.getElementById("adminServiceDesc").value.trim(),p=+document.getElementById("adminServicePrice").value||0,dur=+document.getElementById("adminServiceDuration").value||60;
   hideEl("adminServiceError");hideEl("adminServiceSuccess");
   try{await API.post("/services",{name:n,description:d,price:p,duration:dur});showSuccess("adminServiceSuccess",`Услуга «${n}» добавлена`);document.getElementById("adminServiceName").value="";document.getElementById("adminServiceDesc").value="";await loadServices();loadAdminStats();showToast("Услуга добавлена!","success");setTimeout(()=>hideEl("adminServiceSuccess"),3000)}catch(err){showError("adminServiceError",err.message)}
+}
+
+// ═══ ADMIN SLOTS ═══
+function populateSlotServiceSelects() {
+  const selects = ["adminSlotService", "newSlotService"];
+  selects.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.innerHTML = '<option value="">Выберите услугу</option>' +
+        allServices.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("");
+    }
+  });
+}
+
+async function loadAdminSlots() {
+  const sid = document.getElementById("adminSlotService")?.value;
+  const date = document.getElementById("adminSlotDate")?.value;
+  const c = document.getElementById("adminSlotsList");
+  if (!sid || !date) { c.innerHTML = '<p class="hint-text">Выберите услугу и дату</p>'; return; }
+  try {
+    const d = await API.get(`/available-slots?service_id=${sid}&date=${date}`);
+    if (!d.slots.length) { c.innerHTML = '<p class="hint-text">Слотов нет — добавьте их ниже</p>'; return; }
+    const DAYS = ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+    c.innerHTML = '<div class="time-slots">' + d.slots.map(s =>
+      `<span class="time-slot ${s.is_available ? "time-slot--selected" : "time-slot--busy"}" style="cursor:default">
+        ${s.time} <small style="font-size:.7rem">${s.booked_count}/${s.max_bookings}</small>
+      </span>`
+    ).join("") + '</div>' +
+    `<p style="font-size:.72rem;color:var(--light);margin-top:6px">День недели: ${DAYS[d.day_of_week]}</p>`;
+  } catch { c.innerHTML = '<p class="hint-text">Ошибка загрузки</p>'; }
+}
+
+async function handleAddSlot() {
+  const service_id = +document.getElementById("newSlotService").value;
+  const day_of_week = +document.getElementById("newSlotDay").value;
+  const slot_time = document.getElementById("newSlotTime").value;
+  const max_bookings = +document.getElementById("newSlotMax").value || 1;
+  hideEl("adminSlotError"); hideEl("adminSlotSuccess");
+  if (!service_id || !slot_time) { showError("adminSlotError", "Выберите услугу и время"); return; }
+  try {
+    const d = await API.post("/slots", { service_id, day_of_week, slot_time, max_bookings });
+    showSuccess("adminSlotSuccess", d.message);
+    showToast("Слот добавлен!", "success");
+    setTimeout(() => hideEl("adminSlotSuccess"), 3000);
+  } catch(err) { showError("adminSlotError", err.message); }
 }
 
 // ═══ HELPERS ═══

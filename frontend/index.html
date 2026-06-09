@@ -161,6 +161,31 @@
           <div class="admin-right">
             <h3 class="section-title">📋 Все записи</h3>
             <div id="adminBookingsList"><div class="loading"><div class="spinner"></div></div></div>
+            <h3 class="section-title" style="margin-top:24px">🕐 Управление слотами</h3>
+            <div class="form-row" style="margin-bottom:10px">
+              <select id="adminSlotService" class="form-input" style="font-size:.85rem">
+                <option value="">Выберите услугу</option>
+              </select>
+              <input type="date" id="adminSlotDate" class="form-input" style="font-size:.85rem">
+            </div>
+            <div id="adminSlotsList" style="margin-bottom:16px"><p class="hint-text">Выберите услугу и дату</p></div>
+            <h3 class="section-title" style="margin-top:16px">➕ Добавить слот в расписание</h3>
+            <div class="form-row" style="margin-bottom:8px">
+              <select id="newSlotService" class="form-input" style="font-size:.85rem"><option value="">Услуга</option></select>
+              <select id="newSlotDay" class="form-input" style="font-size:.85rem">
+                <option value="1">Понедельник</option><option value="2">Вторник</option>
+                <option value="3">Среда</option><option value="4">Четверг</option>
+                <option value="5">Пятница</option><option value="6">Суббота</option>
+                <option value="0">Воскресенье</option>
+              </select>
+            </div>
+            <div class="form-row" style="margin-bottom:8px">
+              <input type="time" id="newSlotTime" class="form-input" value="09:00" style="font-size:.85rem">
+              <input type="number" id="newSlotMax" class="form-input" value="1" min="1" max="5" placeholder="Мест" style="font-size:.85rem">
+            </div>
+            <div class="form-error" id="adminSlotError" style="display:none"></div>
+            <div class="form-success" id="adminSlotSuccess" style="display:none"></div>
+            <button onclick="handleAddSlot()" class="btn btn--primary btn--sm" style="width:100%">Добавить слот</button>
             <h3 class="section-title" style="margin-top:24px">👥 Пользователи</h3>
             <div id="adminUsersList"><div class="loading"><div class="spinner"></div></div></div>
           </div>

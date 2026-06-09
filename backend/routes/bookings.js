@@ -31,10 +31,14 @@ router.post("/", authRequired, async (req, res) => {
     return res.status(400).json({ error: "Это время уже прошло. Выберите более позднее" });
   }
 
-  // Проверить что формат времени валидный
-  const validTimes = ["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
-  if (!validTimes.includes(booking_time)) {
-    return res.status(400).json({ error: "Некорректное время записи" });
+  // Проверить что слот существует в расписании (таблица time_slots)
+  const dayOfWeek = new Date(booking_date + "T00:00:00").getDay();
+  const slotExists = await db.getAsync(
+    "SELECT id FROM time_slots WHERE service_id=? AND day_of_week=? AND slot_time=? AND is_active=1",
+    [service_id, dayOfWeek, booking_time]
+  );
+  if (!slotExists) {
+    return res.status(400).json({ error: "Этот слот недоступен для данной услуги в выбранный день" });
   }
 
   // Проверить что слот свободен
