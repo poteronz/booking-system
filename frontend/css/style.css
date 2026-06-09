@@ -149,6 +149,13 @@ a{color:var(--primary);text-decoration:none;transition:color var(--t)}a:hover{co
 .admin-stat__label{font-size:.72rem;color:var(--light);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
 .admin-grid{display:grid;grid-template-columns:380px 1fr;gap:24px}
 .admin-right{min-width:0}
+.admin-users-toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:10px}
+.admin-users-toolbar__search{flex:1;min-width:220px}
+.admin-users-toolbar__filters{display:flex;gap:10px;flex-wrap:wrap}
+.admin-users-toolbar__filters .form-input{min-width:150px}
+.admin-users-meta{font-size:.78rem;color:var(--light);margin-bottom:10px}
+.admin-users-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
+.admin-pagination__label{font-size:.85rem;color:var(--muted);font-weight:600}
 .admin-row{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:8px;font-size:.85rem;transition:var(--t)}
 .admin-row:hover{box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .admin-row__user{font-weight:700;color:var(--primary);min-width:90px}
@@ -157,6 +164,9 @@ a{color:var(--primary);text-decoration:none;transition:color var(--t)}a:hover{co
 .admin-row__role{padding:2px 8px;border-radius:var(--r-full);font-size:.7rem;font-weight:700}
 .admin-row__role--admin{background:var(--warning-bg);color:#92400e}
 .admin-row__role--user{background:var(--primary-l);color:var(--primary)}
+
+/* Profile extras */
+.profile-timezone{margin-top:6px;font-size:.85rem;color:var(--muted)}
 
 /* Empty/Loading */
 .empty-state{text-align:center;padding:56px 20px}
@@ -203,6 +213,10 @@ a{color:var(--primary);text-decoration:none;transition:color var(--t)}a:hover{co
   .booking-card__actions{width:100%;justify-content:flex-end}
   .form-row{grid-template-columns:1fr}
   .filters-bar{flex-direction:column}
+  .admin-users-toolbar{flex-direction:column}
+  .admin-users-toolbar__filters{width:100%}
+  .admin-users-toolbar__filters .form-input{flex:1;min-width:0}
+  .admin-users-pagination{flex-direction:column;align-items:flex-start}
   .footer__inner{flex-direction:column;gap:6px;text-align:center}
 }
 @media(max-width:480px){.page-title{font-size:1.3rem}.form-card{padding:20px}.admin-stats{grid-template-columns:1fr}}

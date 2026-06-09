@@ -187,7 +187,27 @@
             <div class="form-success" id="adminSlotSuccess" style="display:none"></div>
             <button onclick="handleAddSlot()" class="btn btn--primary btn--sm" style="width:100%">Добавить слот</button>
             <h3 class="section-title" style="margin-top:24px">👥 Пользователи</h3>
+            <div class="admin-users-toolbar">
+              <div class="search-box admin-users-toolbar__search">
+                <span class="search-box__icon">🔍</span>
+                <input type="text" class="search-box__input" id="adminUsersSearch" placeholder="Поиск по логину или timezone">
+              </div>
+              <div class="admin-users-toolbar__filters">
+                <select class="form-input" id="adminUsersRole">
+                  <option value="all">Все роли</option>
+                  <option value="user">Пользователи</option>
+                  <option value="admin">Админы</option>
+                </select>
+                <select class="form-input" id="adminUsersLimit">
+                  <option value="5">5 / стр.</option>
+                  <option value="10">10 / стр.</option>
+                  <option value="20">20 / стр.</option>
+                </select>
+              </div>
+            </div>
+            <div class="admin-users-meta" id="adminUsersMeta"></div>
             <div id="adminUsersList"><div class="loading"><div class="spinner"></div></div></div>
+            <div class="admin-users-pagination" id="adminUsersPagination"></div>
           </div>
         </div>
       </div>

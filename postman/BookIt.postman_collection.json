@@ -1,0 +1,297 @@
+{
+  "info": {
+    "_postman_id": "3f4ed3cf-1d78-4e4f-8a7d-3f93d7a1a9f5",
+    "name": "BookIt API",
+    "description": "Коллекция для проверки API BookIt",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "token", "value": "" },
+    { "key": "futureDate", "value": "" },
+    { "key": "pastDate", "value": "" },
+    { "key": "serviceId", "value": "1" },
+    { "key": "bookingId", "value": "1" },
+    { "key": "slotId", "value": "1" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "function formatDate(date) {",
+          "  const year = date.getFullYear();",
+          "  const month = String(date.getMonth() + 1).padStart(2, '0');",
+          "  const day = String(date.getDate()).padStart(2, '0');",
+          "  return `${year}-${month}-${day}`;",
+          "}",
+          "const future = new Date();",
+          "future.setDate(future.getDate() + 1);",
+          "while (future.getDay() === 0) {",
+          "  future.setDate(future.getDate() + 1);",
+          "}",
+          "const past = new Date();",
+          "past.setDate(past.getDate() - 1);",
+          "pm.collectionVariables.set('futureDate', formatDate(future));",
+          "pm.collectionVariables.set('pastDate', formatDate(past));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.collectionVariables.set('token', body.token); }",
+                  "if (body.user && body.user.id) { pm.collectionVariables.set('currentUserId', body.user.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"postman_user\",\n  \"password\": \"pass1234\",\n  \"timezone\": \"Europe/Moscow\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.collectionVariables.set('token', body.token); }",
+                  "if (body.user && body.user.id) { pm.collectionVariables.set('currentUserId', body.user.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demo\",\n  \"password\": \"user123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public API",
+      "item": [
+        {
+          "name": "Services list",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/services?search=&sort=price_asc"
+          }
+        },
+        {
+          "name": "Service details",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/services/{{serviceId}}"
+          }
+        },
+        {
+          "name": "Available slots",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/available-slots?service_id={{serviceId}}&date={{futureDate}}"
+          }
+        },
+        {
+          "name": "Busy times",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/bookings/busy-times?service_id={{serviceId}}&date={{futureDate}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Protected API",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          { "key": "token", "value": "{{token}}", "type": "string" }
+        ]
+      },
+      "item": [
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/me"
+          }
+        },
+        {
+          "name": "Create booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/bookings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"service_id\": {{serviceId}},\n  \"booking_date\": \"{{futureDate}}\",\n  \"booking_time\": \"14:00\"\n}"
+            }
+          }
+        },
+        {
+          "name": "My bookings",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/bookings/my"
+          }
+        },
+        {
+          "name": "Cancel booking",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/profile"
+          }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/profile",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demo_updated\",\n  \"timezone\": \"Europe/Moscow\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/profile/password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"user123\",\n  \"new_password\": \"user1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Admin stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/stats"
+          }
+        },
+        {
+          "name": "Admin users",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/users?search=&role=all&page=1&limit=5"
+          }
+        },
+        {
+          "name": "Admin bookings",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/bookings/admin/all"
+          }
+        },
+        {
+          "name": "Add service",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/services",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Пробная услуга\",\n  \"description\": \"Добавлено из Postman\",\n  \"price\": 900,\n  \"duration\": 30\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete service",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/services/{{serviceId}}"
+          }
+        },
+        {
+          "name": "Add slot",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/slots",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"service_id\": {{serviceId}},\n  \"day_of_week\": 1,\n  \"slot_time\": \"18:00\",\n  \"max_bookings\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete slot",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/slots/{{slotId}}"
+          }
+        },
+        {
+          "name": "Service schedule",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/slots/service/{{serviceId}}"
+          }
+        }
+      ]
+    }
+  ]
+}

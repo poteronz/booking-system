@@ -1,0 +1,862 @@
+openapi: 3.1.0
+info:
+  title: BookIt API
+  version: 1.0.0
+  description: REST API сервиса онлайн-записи BookIt.
+servers:
+  - url: http://localhost:3000/api
+tags:
+  - name: Auth
+  - name: Services
+  - name: Bookings
+  - name: Profile
+  - name: Admin
+  - name: Slots
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        role:
+          type: string
+          enum: [user, admin]
+        timezone:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    AuthResponse:
+      allOf:
+        - $ref: "#/components/schemas/MessageResponse"
+        - type: object
+          properties:
+            user:
+              $ref: "#/components/schemas/User"
+            token:
+              type: string
+          required:
+            - user
+            - token
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: integer
+        duration:
+          type: integer
+        active:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        booking_count:
+          type: integer
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        service_id:
+          type: integer
+        booking_date:
+          type: string
+          example: "2026-06-15"
+        booking_time:
+          type: string
+          example: "14:00"
+        status:
+          type: string
+          enum: [active, cancelled, completed]
+        created_at:
+          type: string
+          format: date-time
+        service_name:
+          type: string
+        service_price:
+          type: integer
+        service_duration:
+          type: integer
+        service_desc:
+          type: string
+        user_name:
+          type: string
+    TimeSlot:
+      type: object
+      properties:
+        id:
+          type: integer
+        service_id:
+          type: integer
+        day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+        slot_time:
+          type: string
+          example: "14:00"
+        max_bookings:
+          type: integer
+        is_active:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+    AvailableSlot:
+      type: object
+      properties:
+        id:
+          type: integer
+        time:
+          type: string
+        max_bookings:
+          type: integer
+        booked_count:
+          type: integer
+        available:
+          type: integer
+        is_available:
+          type: boolean
+        is_past:
+          type: boolean
+    ProfileStats:
+      type: object
+      properties:
+        active:
+          type: integer
+        cancelled:
+          type: integer
+        total:
+          type: integer
+        total_spent:
+          type: integer
+    ProfileResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        stats:
+          $ref: "#/components/schemas/ProfileStats"
+      required:
+        - user
+        - stats
+    AdminStats:
+      type: object
+      properties:
+        users:
+          type: integer
+        services:
+          type: integer
+        bookings:
+          type: object
+          properties:
+            total:
+              type: integer
+            active:
+              type: integer
+            cancelled:
+              type: integer
+        revenue:
+          type: integer
+        popular_services:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              count:
+                type: integer
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        role:
+          type: string
+        timezone:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        active_bookings:
+          type: integer
+        total_bookings:
+          type: integer
+paths:
+  /register:
+    post:
+      tags: [Auth]
+      summary: Регистрация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: newuser
+                password:
+                  type: string
+                  example: pass1234
+                timezone:
+                  type: string
+                  example: Europe/Moscow
+      responses:
+        "201":
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Логин занят
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /login:
+    post:
+      tags: [Auth]
+      summary: Вход в систему
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: demo
+                password:
+                  type: string
+                  example: user123
+      responses:
+        "200":
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Неверные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /logout:
+    post:
+      tags: [Auth]
+      summary: Выход из системы
+      responses:
+        "200":
+          description: Успешный выход
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+  /me:
+    get:
+      tags: [Auth]
+      summary: Текущий пользователь
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные текущего пользователя
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+        "401":
+          description: Требуется авторизация
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /services:
+    get:
+      tags: [Services]
+      summary: Список услуг
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Поиск по названию и описанию
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [price_asc, price_desc, duration, name]
+      responses:
+        "200":
+          description: Список услуг
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Service"
+    post:
+      tags: [Services]
+      summary: Добавить услугу
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: integer
+                duration:
+                  type: integer
+      responses:
+        "201":
+          description: Услуга создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    $ref: "#/components/schemas/Service"
+                  message:
+                    type: string
+        "403":
+          description: Только админ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /services/{id}:
+    get:
+      tags: [Services]
+      summary: Детали услуги
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Услуга
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    $ref: "#/components/schemas/Service"
+        "404":
+          description: Не найдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [Services]
+      summary: Деактивировать услугу
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Услуга деактивирована
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "403":
+          description: Только админ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /bookings:
+    post:
+      tags: [Bookings]
+      summary: Создать запись
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_id, booking_date, booking_time]
+              properties:
+                service_id:
+                  type: integer
+                booking_date:
+                  type: string
+                  example: "2026-06-15"
+                booking_time:
+                  type: string
+                  example: "14:00"
+      responses:
+        "201":
+          description: Запись создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  booking:
+                    $ref: "#/components/schemas/Booking"
+                  message:
+                    type: string
+        "400":
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Требуется авторизация
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Слот занят
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /bookings/my:
+    get:
+      tags: [Bookings]
+      summary: Мои записи
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список записей
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookings:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Booking"
+  /bookings/{id}:
+    delete:
+      tags: [Bookings]
+      summary: Отменить запись
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Запись отменена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "403":
+          description: Нельзя отменить чужую запись
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Запись не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /bookings/admin/all:
+    get:
+      tags: [Bookings]
+      summary: Все записи
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Все записи
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookings:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Booking"
+                  stats:
+                    type: object
+  /bookings/busy-times:
+    get:
+      tags: [Bookings]
+      summary: Занятые слоты
+      parameters:
+        - in: query
+          name: service_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            example: "2026-06-15"
+      responses:
+        "200":
+          description: Занятые и доступные слоты
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  busy_times:
+                    type: array
+                    items:
+                      type: string
+                  slots:
+                    type: array
+                    items:
+                      type: object
+  /profile:
+    get:
+      tags: [Profile]
+      summary: Профиль пользователя
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Профиль и статистика
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+    put:
+      tags: [Profile]
+      summary: Обновить профиль
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                timezone:
+                  type: string
+      responses:
+        "200":
+          description: Профиль обновлён
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: "#/components/schemas/User"
+                  token:
+                    type: string
+        "400":
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /profile/password:
+    put:
+      tags: [Profile]
+      summary: Сменить пароль
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password:
+                  type: string
+                new_password:
+                  type: string
+      responses:
+        "200":
+          description: Пароль изменён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+  /admin/stats:
+    get:
+      tags: [Admin]
+      summary: Статистика системы
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Статистика
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: Пользователи с поиском и пагинацией
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: role
+          schema:
+            type: string
+            enum: [all, user, admin]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+      responses:
+        "200":
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AdminUser"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+  /available-slots:
+    get:
+      tags: [Slots]
+      summary: Доступные слоты для услуги и даты
+      parameters:
+        - in: query
+          name: service_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            example: "2026-06-15"
+      responses:
+        "200":
+          description: Слоты
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slots:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AvailableSlot"
+                  date:
+                    type: string
+                  day_of_week:
+                    type: integer
+  /slots:
+    post:
+      tags: [Slots]
+      summary: Добавить слот в расписание
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_id, day_of_week, slot_time]
+              properties:
+                service_id:
+                  type: integer
+                day_of_week:
+                  type: integer
+                  minimum: 0
+                  maximum: 6
+                slot_time:
+                  type: string
+                  example: "09:00"
+                max_bookings:
+                  type: integer
+                  example: 2
+      responses:
+        "201":
+          description: Слот создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  slot:
+                    $ref: "#/components/schemas/TimeSlot"
+  /slots/{id}:
+    delete:
+      tags: [Slots]
+      summary: Деактивировать слот
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Слот деактивирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+  /slots/service/{serviceId}:
+    get:
+      tags: [Slots]
+      summary: Расписание услуги
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: serviceId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Расписание
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slots:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TimeSlot"
